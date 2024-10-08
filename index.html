@@ -1,0 +1,107 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>OCR GUI</title>
+    <style>
+        body {
+            margin: 0;
+            padding: 0;
+            overflow: hidden; /* Prevent scrolling */
+        }
+        #ocrPanel {
+            position: fixed;
+            top: 50px;
+            left: 50px;
+            width: 200px;
+            height: 100px;
+            background-color: rgba(255, 255, 255, 0.9);
+            border: 1px solid #ccc;
+            box-shadow: 2px 2px 10px rgba(0, 0, 0, 0.5);
+            padding: 10px;
+            cursor: move;
+            z-index: 1000;
+        }
+        #captureButton {
+            padding: 10px;
+            background-color: #007bff;
+            color: white;
+            border: none;
+            cursor: pointer;
+        }
+    </style>
+</head>
+<body>
+
+<div id="ocrPanel">
+    <h3>OCR Tool</h3>
+    <button id="captureButton">Capture & Recognize</button>
+</div>
+
+<script src="https://cdnjs.cloudflare.com/ajax/libs/html2canvas/0.4.1/html2canvas.min.js"></script>
+<script src="https://cdn.rawgit.com/tesseract-ocr/tesseract.js/master/dist/tesseract.min.js"></script>
+<script>
+    // Make the panel draggable
+    dragElement(document.getElementById("ocrPanel"));
+
+    function dragElement(el) {
+        let pos1 = 0, pos2 = 0, pos3 = 0, pos4 = 0;
+        el.onmousedown = dragMouseDown;
+
+        function dragMouseDown(e) {
+            e = e || window.event;
+            e.preventDefault();
+            pos3 = e.clientX;
+            pos4 = e.clientY;
+            document.onmouseup = closeDragElement;
+            document.onmousemove = elementDrag;
+        }
+
+        function elementDrag(e) {
+            e = e || window.event;
+            e.preventDefault();
+            pos1 = pos3 - e.clientX;
+            pos2 = pos4 - e.clientY;
+            pos3 = e.clientX;
+            pos4 = e.clientY;
+            el.style.top = (el.offsetTop - pos2) + "px";
+            el.style.left = (el.offsetLeft - pos1) + "px";
+        }
+
+        function closeDragElement() {
+            document.onmouseup = null;
+            document.onmousemove = null;
+        }
+    }
+
+    // Capture and recognize button
+    document.getElementById('captureButton').onclick = function() {
+        const element = document.body; // You can change this to a specific element
+        html2canvas(element).then(canvas => {
+            const imgData = canvas.toDataURL('image/png');
+            const img = new Image();
+            img.src = imgData;
+            img.onload = function() {
+                Tesseract.recognize(
+                    img,
+                    'eng',
+                    {
+                        logger: info => console.log(info) // Log progress
+                    }
+                ).then(({ data: { text } }) => {
+                    alert("Recognized equation: " + text);
+                }).catch(err => {
+                    console.error(err);
+                    alert("Error recognizing text: " + err);
+                });
+            };
+        }).catch(err => {
+            console.error(err);
+            alert("Error capturing canvas: " + err);
+        });
+    };
+</script>
+
+</body>
+</html>
